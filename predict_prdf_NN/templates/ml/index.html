@@ -1,0 +1,156 @@
+<html>
+
+  <head>
+    <link rel="stylesheet" href="/static/css/index.css">
+  </head>
+
+  <body>
+
+  <table align="center">
+
+  <tr>
+    <th>
+    <div class="Atom-container">
+      {% for i in atomRange %}
+        <div class="Atom-box">
+	  {% for j in atomNum %}
+	    <div class="Atom-circle-{{j}}"
+              onclick="ChangeAtom({{i}}, {{j}})"
+	      id="{{i}},{{j}}">
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    </th>
+    <th>
+    <div id="curve_chart" style="width: 900px; height: 500px"></div>
+    <script type="text/javascript">
+      var changedAtomList = [];
+      function ChangeAtom(a, b) {
+	var i = a*2 + b;
+        var temp = a + ',' + b;
+        var elem = document.getElementById(temp);
+	var background = getComputedStyle(elem).getPropertyValue("background-color");
+	console.log(background);
+        var nextBackground = null;
+        if (background === 'rgb(128, 128, 128)') {
+          nextBackground = 'blue';
+          changedAtomList.push(i);
+        } else {
+          nextBackground = 'gray';
+          var index = changedAtomList.indexOf(i);
+          if (index > -1) {
+            changedAtomList.splice(index, 1);
+          }
+        }
+        document.getElementById(temp).style.background = nextBackground;
+        document.getElementById('id_atomList').value = changedAtomList;
+        console.log(changedAtomList);
+      }
+    </script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('44', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var result = [];
+        result = {{result}};
+        result.splice(0, 0, ['x','predicted', 'expected']);
+        var data = google.visualization.arrayToDataTable(result);
+        var options = {
+          title: 'DOS',
+          curveType: 'function',
+	  legend: { position: 'bottom' },
+	  hAxis: {
+            title: 'E-Ef [eV]',
+	  },
+          vAxis: {
+            title: 'DOS [1/eV]',
+            viewWindow: {
+              min: 0,
+              max: 40
+            }
+          }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+        chart.draw(data, options);
+      }
+    </script>                                                                                    </tr>
+    </th>
+  <tr>
+    <th>
+    <form method="POST" action="/ml/">
+      {% csrf_token %}
+      {% for field in form %}
+        {{ field }}
+      {% endfor %}
+      <button type="submit">Submit</button>
+    </form>
+    </th>
+    <th>
+    </th>
+  </tr>
+  </table>
+
+  </body>
+</html>
+<!--
+    <div id="curve_chart" style="width: 900px; height: 500px"></div>
+    <script type="text/javascript">
+      var changedAtomList = [];
+      function ChangeAtom(a, b) {
+	var i = a*2 + b;
+        var temp = a + ',' + b;
+        var elem = document.getElementById(temp);
+	var background = getComputedStyle(elem).getPropertyValue("background-color");
+	console.log(background);
+        var nextBackground = null;
+        if (background === 'rgb(128, 128, 128)') {
+          nextBackground = 'blue';
+          changedAtomList.push(i);
+        } else {
+          nextBackground = 'gray';
+          var index = changedAtomList.indexOf(i);
+          if (index > -1) {
+            changedAtomList.splice(index, 1);
+          }
+        }
+        document.getElementById(temp).style.background = nextBackground;
+        document.getElementById('id_atomList').value = changedAtomList;
+        console.log(changedAtomList);
+      }
+    </script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('44', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var result = [];
+        result = {{result}};
+        result.splice(0, 0, ['x','predicted', 'expected']);
+        var data = google.visualization.arrayToDataTable(result);
+        var options = {
+          title: 'DOS',
+          curveType: 'function',
+	  legend: { position: 'bottom' },
+	  hAxis: {
+            title: 'Energy [eV]'
+	  },
+          vAxis: {
+            title: 'DOS [1/eV]'
+          }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+        chart.draw(data, options);
+      }
+    </script>
+  </body>
+</html>
+-->

@@ -1,0 +1,127 @@
+#! /bin/sh
+#PBS -l nodes=1:OLD:ppn=8
+#PBS -l walltime=1000:00:00
+#PBS -N N_20_j
+#PBS -o ./xpbs.out
+#PBS -e ./xpbs.err
+#PBS -j oe
+##PBS -M mymail@kaist.ac.kr
+##PBS -m e
+
+export OMP_NUM_THREADS=1
+
+#exe
+EXEBIN=/home/`whoami`/bin/siesta
+#MPIARG="-genv I_MPI_FABRICS=tmi"
+MPIARG=""
+
+#-----------------------
+# setup(DO NOT MODIFY)
+#-----------------------
+cd $PBS_O_WORKDIR
+
+rm -f host.done host.terminated host.removed
+
+NPROCS=`wc -l < $PBS_NODEFILE`
+jobid="siesta_`date +%m%d_%H%M%S`"
+basdir="$PBS_O_WORKDIR"
+rundir="/scratch/works/`whoami`/${jobid}"
+infofl="host.job"
+
+hostname > ${infofl}
+echo "${rundir}" >> ${infofl}
+echo "* Run  directory: ${rundir}" >> ${infofl}
+echo "* Start time: `date`" >> ${infofl}
+
+# copy data to primary node
+
+if [ -d ${rundir} ]; then
+rm -rf ${rundir}/*
+else
+mkdir -p ${rundir}
+fi
+
+cp -r ${basdir}/*.fdf  ${rundir}/
+cp -r ${basdir}/*.psf  ${rundir}/
+cp -r ${basdir}/*.DM  ${rundir}/ 
+#cp -r ${basdir}/*.TSHS  ${rundir}/
+
+# create scratch & copy data
+
+NNODES="1"
+NLIST=`sed -n 1p $PBS_NODEFILE`
+echo "$NLIST" > nodelist
+
+if [ $NPROCS -gt 1 ]
+then 
+  for (( p=2; p<=$NPROCS; p++ ))
+  do
+  PBSLST=`sed -n ${p}p $PBS_NODEFILE`
+  if [ $PBSLST != $NLIST ]; then
+    echo "$PBSLST" >> nodelist
+    ssh -Y $PBSLST "rm -rf ${rundir}; mkdir -p ${rundir}"
+    scp -r ${rundir}/*  $PBSLST:${rundir}/
+    NNODES=$(($NNODES+1))
+    NLIST=$PBSLST
+  fi
+  done
+fi
+touch stdout.txt
+
+#-----------------------
+# run siesta
+#-----------------------
+cd ${rundir}
+
+mpirun -np $NPROCS ${MPIARG} $EXEBIN  < RUN.fdf > stdout.txt
+
+cd ${basdir}
+
+# backup data
+#----------------
+cp -r ${rundir}/stdout.txt  ${basdir}/
+cp -r ${rundir}/*.xyz       ${basdir}/
+##Electronic Calculation##
+cp -r ${rundir}/*.EIG       ${basdir}/
+##Density Matrix##
+cp -r ${rundir}/*.DM       ${basdir}/
+##Density of states##
+cp -r ${rundir}/*.DOS       ${basdir}/
+cp -r ${rundir}/*.PDOS       ${basdir}/
+cp -r ${rundir}/*.LDOS       ${basdir}/
+cp -r ${rundir}/*.XV       ${basdir}/
+##Charge Density##
+cp -r ${rundir}/*.RHO       ${basdir}/
+##Potential##
+cp -r ${rundir}/*.VH       ${basdir}/
+##Band Structure##
+cp -r ${rundir}/*.bands       ${basdir}/
+##COHP##
+cp -r ${rundir}/*.WFSX       ${basdir}/
+cp -r ${rundir}/*.HSX       ${basdir}/
+#Transport##
+cp -r ${rundir}/*.TSHS       ${basdir}/
+cp -r ${rundir}/*.AVTRANS       ${basdir}/
+#Optimize#
+cp -r ${rundir}/*.ANI       ${basdir}/
+
+# remove scratch
+#----------------
+  for (( p=1; p<=$NNODES; p++ ))
+  do
+  PBSLST=`sed -n ${p}p nodelist`
+  ssh -Y $PBSLST "rm -rf ${rundir}"
+  done
+  echo "* Removed scratch: ${rundir}" >> ${infofl}
+
+#-----------------------
+EXSTR=`tail -1 stdout.txt | awk '{printf $2}'`
+if [ "$EXSTR" = "TERMINATED" ]; then
+  echo "* JOB TERMINATED: `date`" >> ${infofl}
+  mv ${infofl} host.terminated
+else
+  echo "* End   time: `date`" >> ${infofl}
+  mv ${infofl} host.done
+fi
+exit 0
+#eof.
