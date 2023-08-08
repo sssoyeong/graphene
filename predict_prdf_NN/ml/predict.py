@@ -1,10 +1,13 @@
 #from sklearn import datasets, svm, metrics, linear_model
 from sklearn.neural_network import MLPRegressor
 import random
-import os, sys
+import os
+import sys
+sys.path.append('D:/PycharmProjects/graphene')
 import numpy as np
 import NanoCore as nc
-from link import link
+# from link import link
+from . import link
 
 
 def mycmp(a, b): return cmp(a[0], b[0])
@@ -48,7 +51,7 @@ def predict(atom_category, input_list, broad=0.05, erange=10):
         for j in os.listdir(path + '/' + i):
             if ( j == 'DOS_%3.2f_%2.2i' % (broad, erange) ) and ( int(i.split('_')[2]) == n_dop ):
             #if j == 'DOS_%3.2f_%2.2i' % (broad, erange):
-                print i
+                print(i)
 
                 # Parse Ef, DOS data
                 f = open(path+'/'+i+'/'+j, 'r')
@@ -133,7 +136,8 @@ def predict(atom_category, input_list, broad=0.05, erange=10):
                         struct_result.append([serial, 1])
                     i_str += 1
 
-                struct_result.sort(mycmp)
+                # struct_result.sort(mycmp)
+                struct_result.sort()
                 struct_result = list( np.array( np.array(struct_result)[:,1] ) )
                 data_set_struct.append(struct_result)
                 ### logical descriptor ###
@@ -159,8 +163,9 @@ def predict(atom_category, input_list, broad=0.05, erange=10):
     n_dop = len(temp)
     for item in temp:
         c_list[int(item)] = '1'
-    link.sort(mycmp)
-    link_arr = np.array(link)[:,1]
+    # link.link.sort(mycmp)
+    link.link.sort()
+    link_arr = np.array(link.link)[:,1]
 
     c_list2 = np.array(np.zeros(72), dtype=int)
     i_c = 0
@@ -168,7 +173,7 @@ def predict(atom_category, input_list, broad=0.05, erange=10):
         c_list2[l-1] = c_list[i_c]
         i_c += 1
     c_list = list( np.array(c_list2, dtype=int) )
-    print "input list:", c_list
+    print("input list:", c_list)
 
     #############
     # new Input #
@@ -239,36 +244,36 @@ def predict(atom_category, input_list, broad=0.05, erange=10):
             ex_i = i
             break
         i += 1
-    print "ex_i =", ex_i
+    print("ex_i =", ex_i)
 
     #print "PRDF_inp =", prdf_input, np.sum(prdf_input)
     #print "PRDF_org =", data_set_struct2[ex_i], np.sum(data_set_struct2[ex_i])
-    print "d(PRDF) =", np.sum(np.abs(prdf_input - data_set_struct2[ex_i]))
+    print("d(PRDF) =", np.sum(np.abs(prdf_input - data_set_struct2[ex_i])))
 
     expected_data = np.zeros(1001)
 
     if ex_i == -1:
-        print "OUT: No identical configuration"
+        print("OUT: No identical configuration")
         classifier.fit( data_set_struct2, data_set)
 
     elif ex_i == 0:
-        print "OUT: Exclude the identical configuration [0]"
+        print("OUT: Exclude the identical configuration [0]")
         classifier.fit( data_set_struct2, data_set)
         expected_data = data_set[ex_i]
 
     else:
-        print "OUT: Exclude the identical configuration"
+        print("OUT: Exclude the identical configuration")
         classifier.fit( list(data_set_struct2[:ex_i]) + list(data_set_struct2[ex_i+1:]),
                         list(data_set[:ex_i]) + list(data_set[ex_i+1:]) )
         expected_data = data_set[ex_i]
 
     #predicted = classifier.predict( np.array(c_list) )[0]
     predicted = classifier.predict( [prdf_input] )[0]
-    print "predicted,", predicted
+    print("predicted,", predicted)
 
     n_factor = np.sum(expected_data)
     diff = np.sqrt( (np.array(predicted)-np.array(expected_data))**2 )
-    print "Accuracy =", 100-(sum(diff)/n_factor*100)
+    print("Accuracy =", 100-(sum(diff)/n_factor*100))
 
     index = -1
     for i in range(len(data_set_struct)):

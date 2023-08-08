@@ -435,8 +435,10 @@ class AtomsSystem(object):
         >>> atoms.set_cell(cell)
         >>> 
         """
-        if cell_vector == 'None':
+        if type(cell_vector) == type('None'):
             self._cell = 'None'; return
+        # if cell_vector == 'None':
+        #    self._cell = 'None'; return
         cell_vector = np.array(cell_vector)
         if cell_vector.shape == (3,3):
             self._cell = cell_vector
@@ -1128,8 +1130,10 @@ class AtomsSystem(object):
 
     # connectivity across cell boundaries (X)
     def __mul__(self, other):
-        if self.get_cell() == 'None':
+        if type(self.get_cell()) == type('None'):
             raise ValueError("Can`t expand this system without cell vectors.")
+        # if self.get_cell() == 'None':
+        #     raise ValueError("Can`t expand this system without cell vectors.")
         v1, v2, v3 = self.get_cell(); i_serial=1
         loop_1 = 0; loop_2 = 0; loop_3 = 0
 

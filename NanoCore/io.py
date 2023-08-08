@@ -172,9 +172,11 @@ def read_xyz(file_name, keeptype=False, clean=True, initial=False):
     #print 'Read the (last) structure from "%s" ...' % file_name            
     xyz_file.close()
     if cell:
+        cell = list(cell)
         return AtomsSystem(atoms,
-                           cell=convert_abc2xyz(cell[0], cell[1], cell[2],
-                                                cell[3], cell[4], cell[5]))
+                           cell=convert_abc2xyz(
+                               cell[0], cell[1], cell[2],
+                               cell[3], cell[4], cell[5]))
     else:
         return AtomsSystem(atoms)
 
